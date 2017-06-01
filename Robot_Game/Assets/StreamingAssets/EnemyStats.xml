@@ -1,0 +1,34 @@
+<TargetStatCollection>
+	<Targets>
+		<Target id = "ST1">
+			<IsActive>true</IsActive>
+		</Target>
+		<Target id = "ST2">
+			<IsActive>true</IsActive>
+		</Target>
+		<Target id = "ST3">
+			<IsActive>false</IsActive>
+		</Target>
+		<Target id = "ST4">
+			<IsActive>false</IsActive>
+		</Target>
+		<Target id = "ST5">
+			<IsActive>false</IsActive>
+		</Target>
+		<Target id = "ST6">
+			<IsActive>false</IsActive>
+		</Target>
+		<Target id = "ST7">
+			<IsActive>false</IsActive>
+		</Target>
+		<Target id = "ST8">
+			<IsActive>false</IsActive>
+		</Target>
+		<Target id = "RA1">
+			<IsActive>true</IsActive>
+		</Target>
+		<Target id = "RA2">
+			<IsActive>false</IsActive>
+		</Target>
+	</Targets>
+</TargetStatCollection>

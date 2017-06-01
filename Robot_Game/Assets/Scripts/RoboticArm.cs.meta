@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 494f975a70bf7494280bd9a5fc704a02
+timeCreated: 1495101150
+licenseType: Pro
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - LaserModel: {fileID: 1220494031800906, guid: 10c928f91d8df85449b3d6666e9e6889,
+      type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
