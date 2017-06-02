@@ -21,7 +21,7 @@ public class Projectile : MonoBehaviour
 	void OnTriggerEnter (Collider col)
 	{
 		if (col.gameObject.name.Equals ("PlayerCenter")) {
-			GameManager.GameModeManager.TakeDamage ();
+			GameManager.Player.TakeDamage (1);
 			GameManager.IREController.RemoveFromProjectiles (this.transform.root.gameObject);
 		}
 	}

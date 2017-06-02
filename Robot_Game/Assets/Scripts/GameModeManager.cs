@@ -11,7 +11,6 @@ public class GameModeManager : MonoBehaviour
 
 	int maxEnemyCount = 100;
 	int enemyCount;
-	int health;
 
 	float maxTime = 60.0f * 2.0f;
 	float timeRemaining;
@@ -66,20 +65,10 @@ public class GameModeManager : MonoBehaviour
 		}
 	}
 
-	public void TakeDamage ()
-	{
-		if (health > 0) {
-			health--;
-			GameManager.UIManager.UpdateCenterText (health.ToString ());
-
-			if (health <= 0) {
-				EndGame ();
-			}
-		}
-	}
-
 	public void KillTarget ()
 	{
+		GameManager.Player.UpdateScore (10);
+
 		if (enemyCount > 0) {
 			enemyCount--;
 		}
@@ -94,17 +83,17 @@ public class GameModeManager : MonoBehaviour
 		case Mode.Assault:
 			GameManager.UIManager.SetObjectiveText ("Enemies Left");
 			enemyCount = maxEnemyCount;
-			health = 25;
+			GameManager.Player.Reset ();
 			break;
 		case Mode.TimeAttack:
 			GameManager.UIManager.SetObjectiveText ("Time Remaining");
 			timeRemaining = maxTime;
-			health = 25;
+			GameManager.Player.Reset ();
 			break;
 		}
 
 		GameManager.IREController.Clear ();
-		GameManager.UIManager.UpdateCenterText (health.ToString ());
+		GameManager.UIManager.UpdateCenterText (GameManager.Player.Health.ToString ());
 	}
 
 	public int SpawnCount {
@@ -131,7 +120,7 @@ public class GameModeManager : MonoBehaviour
 		}
 	}
 
-	void EndGame ()
+	public void EndGame ()
 	{
 		GameManager.UIManager.MenuScreen.EnableScreen ("Game Over");
 		isGameRunning = false;

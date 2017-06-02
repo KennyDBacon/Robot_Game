@@ -8,16 +8,20 @@ public class UIManager : MonoBehaviour
 	TargetConnectivityScreen targetConnectivityScreen;
 	MenuScreen menuScreen;
 
-	Text objectiveText, objectiveSubText, centerText;
+	GameObject infoTexts;
+	Text objectiveText, objectiveSubText, centerText, scoreText, scoreSubText;
 
 	void Awake ()
 	{
 		targetConnectivityScreen = this.transform.Find ("TargetConnectivityScreen").GetComponent<TargetConnectivityScreen> ();
 		menuScreen = this.transform.Find ("MenuScreen").GetComponent<MenuScreen> ();
 
-		objectiveText = this.transform.Find ("ObjectiveText").GetComponent<Text> ();
-		objectiveSubText = objectiveText.transform.Find ("Text").GetComponent<Text> ();
-		centerText = this.transform.Find ("CenterText").GetComponent<Text> ();
+		infoTexts = this.transform.Find ("InfoTexts").gameObject;
+		objectiveText = infoTexts.transform.Find ("ObjectiveText").GetComponent<Text> ();
+		objectiveSubText = infoTexts.transform.Find ("ObjectiveSubText").GetComponent<Text> ();
+		centerText = infoTexts.transform.Find ("CenterText").GetComponent<Text> ();
+		scoreText = infoTexts.transform.Find ("ScoreText").GetComponent<Text> ();
+		scoreSubText = infoTexts.transform.Find ("ScoreSubText").GetComponent<Text> ();
 	}
 
 	void Start ()
@@ -55,6 +59,11 @@ public class UIManager : MonoBehaviour
 	public void UpdateCenterText (string info)
 	{
 		centerText.text = info;
+	}
+
+	public void UpdateScoreText (string info)
+	{
+		scoreSubText.text = info;
 	}
 
 	public bool IsPaused {

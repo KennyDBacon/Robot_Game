@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
 	public static UIManager UIManager;
 
 	public static Transform Center;
+	public static Player Player;
 
 	void Awake ()
 	{
@@ -17,6 +18,7 @@ public class GameManager : MonoBehaviour
 		UIManager = GameObject.Find ("Canvas").GetComponent<UIManager> ();
 
 		Center = GameObject.Find ("PlayerCenter").transform;
+		Player = Center.GetComponent<Player> ();
 	}
 
 	public void ExitGame ()

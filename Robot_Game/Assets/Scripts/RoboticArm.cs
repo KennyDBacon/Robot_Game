@@ -14,11 +14,7 @@ public class RoboticArm : Target
 	protected override void Attack ()
 	{
 		if (IsPerformAttack) {
-			GameObject laser = Instantiate (LaserModel);
-			laser.GetComponent<LineRenderer> ().SetPosition (0, this.transform.position);
-			laser.GetComponent<LineRenderer> ().SetPosition (1, GameManager.Center.position);
-
-			GameManager.GameModeManager.TakeDamage ();
+			GameObject laser = Instantiate (LaserModel, this.transform.localPosition, Quaternion.identity);
 		}
 
 		base.Attack ();
