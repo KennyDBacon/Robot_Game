@@ -9,7 +9,6 @@ public class IREController : MonoBehaviour
 	public GameObject TargetGameObject;
 
 	bool isConnected = false;
-	bool isReady = false;
 	string controllerID = "";
 
 	List<Target> targets;
@@ -19,97 +18,41 @@ public class IREController : MonoBehaviour
 	float widthOffset = 20.0f;
 	float heightOffset = 20.0f;
 
-	float snapTargetAttackInterval = 2.5f;
-	float roboticArmAttackInterval = 1.0f;
+	float snapTargetAttackInterval;
+	float roboticArmAttackInterval;
 
 	SerialPort port;
-	Thread thread;
 
-	float spawnInterval = 3.5f;
 	float spawnTimer;
 
-	enum DataIndex
-	{
-		ID = 1,
-		Drone = 2,
-		DroneStat = 3,
-		ST1 = 4,
-		ST2 = 5,
-		Arm1 = 6,
-		Arm2 = 7,
-		Vest = 8,
-		Mist = 9,
-		MistStat = 10,
-		ST3 = 11,
-		ST4 = 12,
-		ST5 = 13,
-		ST6 = 14,
-		ST7 = 15,
-		ST8 = 16
-	}
-
-	public enum TargetIndex
-	{
-		SnapTarget_1 = 7,
-		SnapTarget_2 = 1,
-		SnapTarget_3 = 2,
-		SnapTarget_4 = 3,
-		SnapTarget_5 = 0,
-		SnapTarget_6 = 4,
-		SnapTarget_7 = 5,
-		SnapTarget_8 = 9,
-		RoboticArm_1 = 6,
-		RoboticArm_2 = 8
-	}
-
-	void Awake ()
-	{
-		Vector2 screenSize = new Vector2 (Screen.width, Screen.height);
-
-		targets = new List<Target> ();
-		projectiles = new List<GameObject> ();
-
-		TargetStatContainer tsc = TargetStatContainer.Load (Application.dataPath + "/StreamingAssets/EnemyStats.xml");
-
-		// Top 1
-		SetupTarget (TargetIndex.SnapTarget_5, "SnapTarget_5", Target.Category.SnapTarget, tsc.TargetStats [4].IsActive, new Vector3 (-widthOffset, screenSize.y + heightOffset, distanceFromCamera), snapTargetAttackInterval);
-		// Top 2
-		SetupTarget (TargetIndex.SnapTarget_2, "SnapTarget_2", Target.Category.SnapTarget, tsc.TargetStats [1].IsActive, new Vector3 (screenSize.x / 4, screenSize.y + heightOffset, distanceFromCamera), snapTargetAttackInterval);
-		// Top 3
-		SetupTarget (TargetIndex.SnapTarget_3, "SnapTarget_3", Target.Category.SnapTarget, tsc.TargetStats [2].IsActive, new Vector3 (screenSize.x / 2, screenSize.y + heightOffset, distanceFromCamera), snapTargetAttackInterval);
-		// Top 4
-		SetupTarget (TargetIndex.SnapTarget_4, "SnapTarget_4", Target.Category.SnapTarget, tsc.TargetStats [3].IsActive, new Vector3 (screenSize.x / 4 * 3, screenSize.y + heightOffset, distanceFromCamera), snapTargetAttackInterval);
-		// Top 5
-		SetupTarget (TargetIndex.SnapTarget_6, "SnapTarget_6", Target.Category.SnapTarget, tsc.TargetStats [5].IsActive, new Vector3 (screenSize.x + widthOffset, screenSize.y + heightOffset, distanceFromCamera), snapTargetAttackInterval);
-		// Bottom 1
-		SetupTarget (TargetIndex.SnapTarget_7, "SnapTarget_7", Target.Category.SnapTarget, tsc.TargetStats [6].IsActive, new Vector3 (-widthOffset, -heightOffset, distanceFromCamera), snapTargetAttackInterval);
-		// Bottom 2
-		SetupTarget (TargetIndex.RoboticArm_1, "RoboticArm_1", Target.Category.RoboticArm, tsc.TargetStats [8].IsActive, new Vector3 (screenSize.x / 4, -heightOffset, distanceFromCamera), roboticArmAttackInterval, false);
-		// Bottom 3
-		SetupTarget (TargetIndex.SnapTarget_1, "SnapTarget_1", Target.Category.SnapTarget, tsc.TargetStats [0].IsActive, new Vector3 (screenSize.x / 2, -heightOffset, distanceFromCamera), snapTargetAttackInterval);
-		// Bottom 4
-		SetupTarget (TargetIndex.RoboticArm_2, "RoboticArm_2", Target.Category.RoboticArm, tsc.TargetStats [9].IsActive, new Vector3 (screenSize.x / 4 * 3, -heightOffset, distanceFromCamera), roboticArmAttackInterval, false);
-		// Bottom 5
-		SetupTarget (TargetIndex.SnapTarget_8, "SnapTarget_8", Target.Category.SnapTarget, tsc.TargetStats [7].IsActive, new Vector3 (screenSize.x + widthOffset, -heightOffset, distanceFromCamera), snapTargetAttackInterval);
-
-		CommandConstructor ();
-	}
+	bool isReading;
 
 	void Start ()
 	{
+		projectiles = new List<GameObject> ();
+
+		SetupTarget ();
+
+		CommandConstructor ();
+
 		try {
 			port = new SerialPort ("\\\\.\\COM1", 115200);
 			port.ReadTimeout = 20;
 			port.WriteTimeout = 400;
 			port.Open ();
+			print ("Connected to COM1");
 		} catch {
 			print ("IRE not connected to COM 1");
 		}
 
-		thread = new Thread (new ThreadStart (PortConnector));
-		thread.Start ();
+		if (port.IsOpen) {
+			ResetCommand ();
+			SendCommand ();
 
-		spawnTimer = spawnInterval;
+			StartCoroutine (PortReader ());
+		}
+
+		spawnTimer = GameManager.GameModeManager.SpawnInterval;
 	}
 
 	void Update ()
@@ -117,104 +60,173 @@ public class IREController : MonoBehaviour
 		if (isConnected & GameManager.GameModeManager.IsGameRunning) {
 			SpawnHandler ();
 		}
-	}
 
-	void SetupTarget (TargetIndex index, string label, Target.Category type, bool isActive, Vector3 position, float attackInterval, bool isOffsetTimer = true)
-	{
-		GameObject target = Instantiate (TargetGameObject, Camera.main.ScreenToWorldPoint (position), Quaternion.identity);
-		target.name = label;
-		target.transform.parent = this.transform;
-
-		if (type == Target.Category.SnapTarget) {
-			target.AddComponent<SnapTarget> ();
-		} else if (type == Target.Category.RoboticArm) {
-			target.AddComponent<RoboticArm> ();
+		if (!isReading) {
+			if (port != null) {
+				if (port.IsOpen) {
+					StartCoroutine (PortReader ());
+				}
+			}
 		}
 
-		targets.Add (target.GetComponent<Target> ());
-
-		target.GetComponent<Target> ().Setup (index, label, type, isActive, position, attackInterval, isOffsetTimer);
-
+		if (Input.GetKeyDown (KeyCode.S)) {
+			if (AttackingTargets.Count > 0) {
+				int index = Random.Range (0, AttackingTargets.Count);
+				AttackingTargets [index].SetCommand = 0;
+				SendCommand ();
+			}
+		}
 	}
 
-	public bool IsUpdateConnectivity;
-
-	void PortConnector ()
+	void SetupTarget ()
 	{
-		while (true) {
-			try {
-				if (port.IsOpen) {
-					string line = "";
+		targets = new List<Target> ();
+		List<Vector3> targetPositions = new List<Vector3> ();
 
-					try {
-						line = port.ReadLine ();
-					} catch {
-						line = "";
+		Vector2 screenSize = new Vector2 (Screen.width, Screen.height);
+
+		targetPositions.Add (new Vector3 (-widthOffset, screenSize.y + heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (-widthOffset, screenSize.y + heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (screenSize.x / 2, screenSize.y + heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (screenSize.x / 4 * 3, screenSize.y + heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (screenSize.x + widthOffset, screenSize.y + heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (-widthOffset, -heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (screenSize.x / 4, -heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (screenSize.x / 2, -heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (screenSize.x / 4 * 3, -heightOffset, distanceFromCamera));
+		targetPositions.Add (new Vector3 (screenSize.x + widthOffset, -heightOffset, distanceFromCamera));
+
+		snapTargetAttackInterval = GameManager.GameModeManager.CurrentDifficulty.ST_AttackInterval;
+		roboticArmAttackInterval = GameManager.GameModeManager.CurrentDifficulty.RA_AttackInterval;
+
+		int index = 0;
+		foreach (Vector3 position in targetPositions) {
+			foreach (TargetStat targetStat in DataManager.TargetStats) {
+				if (targetStat.PositionIndex == index) {
+					GameObject target = Instantiate (TargetGameObject, Camera.main.ScreenToWorldPoint (position), Quaternion.identity);
+					target.transform.parent = this.transform;
+
+					// Name of GameObject
+					target.name = targetStat.Label;
+
+					// Attach the script of target's type and add to target list
+					target.AddComponent (System.Type.GetType (targetStat.Type));
+					targets.Add (target.GetComponent<Target> ());
+
+					// Set attack interval based on the target's type
+					float attackInterval;
+					if (targetStat.Type.Equals ("SnapTarget")) {
+						attackInterval = snapTargetAttackInterval;
+					} else {
+						attackInterval = roboticArmAttackInterval;
 					}
 
-					if (!line.Equals ("")) {
-						// Update status
-						string[] data = line.Split (',');
-
-						try {
-							if (!isConnected) {
-								isConnected = true;
-								controllerID = data [(int)DataIndex.ID];
-
-								ResetCommand ();
-								SendCommand ();
-							}
-
-							targets [(int)TargetIndex.SnapTarget_1].UpdateStatus (int.Parse (data [(int)DataIndex.ST1]));
-							targets [(int)TargetIndex.SnapTarget_2].UpdateStatus (int.Parse (data [(int)DataIndex.ST2]));
-							targets [(int)TargetIndex.RoboticArm_1].UpdateStatus (int.Parse (data [(int)DataIndex.Arm1]));
-							targets [(int)TargetIndex.RoboticArm_2].UpdateStatus (int.Parse (data [(int)DataIndex.Arm2]));
-							targets [(int)TargetIndex.SnapTarget_3].UpdateStatus (int.Parse (data [(int)DataIndex.ST3]));
-							targets [(int)TargetIndex.SnapTarget_4].UpdateStatus (int.Parse (data [(int)DataIndex.ST4]));
-							targets [(int)TargetIndex.SnapTarget_5].UpdateStatus (int.Parse (data [(int)DataIndex.ST5]));
-							targets [(int)TargetIndex.SnapTarget_6].UpdateStatus (int.Parse (data [(int)DataIndex.ST6]));
-							targets [(int)TargetIndex.SnapTarget_7].UpdateStatus (int.Parse (data [(int)DataIndex.ST7]));
-							targets [(int)TargetIndex.SnapTarget_8].UpdateStatus (int.Parse (data [(int)DataIndex.ST8]));
-						} catch {
-
-						}
-					}
+					// Setup target
+					// Provide ID of Target for data reference
+					target.GetComponent<Target> ().Setup (targetStat.ID, position, attackInterval);
+					break;
 				}
-			} catch (System.Exception e) {
-				print ("[Ignore TimeOutException] " + e);
 			}
 
-			Thread.Sleep (400);
+			index++;
 		}
+	}
+
+	IEnumerator PortReader ()
+	{
+		try {
+			isReading = true;
+
+			if (port.IsOpen) {
+				string line = "";
+
+				try {
+					line = port.ReadLine ();
+				} catch {
+					line = "";
+				}
+
+				if (!line.Equals ("")) {
+					// Update status
+					string[] data = line.Split (',');
+
+					try {
+						if (!isConnected) {
+							isConnected = true;
+							controllerID = data [1];
+
+							ResetCommand ();
+							SendCommand ();
+						}
+
+						foreach (Target target in targets) {
+							target.UpdateStatus (int.Parse (data [target.StatusIndex]));
+						}
+					} catch (System.Exception e) {
+						print ("[Error]" + e);
+					}
+				}
+			}
+		} catch (System.Exception e) {
+			print ("[Ignore TimeOutException] " + e);
+		}
+
+		yield return new WaitForSeconds (0.2f);
+
+		isReading = false;
 	}
 
 	void SpawnHandler ()
 	{
 		spawnTimer += Time.deltaTime;
 
-		if (spawnTimer >= spawnInterval) {
+		if (spawnTimer >= GameManager.GameModeManager.SpawnInterval) {
 			spawnTimer = 0;
 
-			List<Target> tempTargets = AvailableConnectedTargets;
-			while (GameManager.GameModeManager.SpawnCount < tempTargets.Count) {
-				int index = Random.Range (0, tempTargets.Count);
-				tempTargets.RemoveAt (index);
-			}
+			switch (GameManager.GameModeManager.CurrentGameMode) {
+			case GameModeManager.Mode.PvP:
+				if (AvailableConnectedTargets.Count > 1) {
+					List<Target> blueTeam = SpawnedBlueTargets;
+					List<Target> redTeam = SpawnedRedTargets;
 
-			foreach (Target target in tempTargets) {
-				target.Reset ();
-				//GameManager.UIManager.TargetConnectivityScreen.SpawnIndication (target);
-				SetCommand (target.TargetIndex, 1);
+					if (blueTeam.Count < 5) {
+						SpawnTarget (3);
+					}
+
+					if (redTeam.Count < 5) {
+						SpawnTarget (1);
+					}
+				}
+				break;
+			case GameModeManager.Mode.PvE:
+				SpawnTarget (GetTypeToSpawn);
+				break;
 			}
 
 			SendCommand ();
 		}
 	}
 
-	void SetCommand (TargetIndex targetIndex, int comm)
+	void SpawnTarget (int command)
 	{
-		int index = (int)targetIndex;
-		targets [index].SetCommand = comm;
+		if (AvailableConnectedTargets.Count > 0) {
+			int index = Random.Range (0, AvailableConnectedTargets.Count);
+			Target target = AvailableConnectedTargets [index];
+			target.SpawnSequence (GetTeam (command), command);
+		}
+	}
+
+	Target.Team GetTeam (int comm)
+	{
+		if (comm == 1) {
+			return Target.Team.Red;
+		} else if (comm == 2) {
+			return Target.Team.None;
+		} else if (comm == 3) {
+			return Target.Team.Blue;
+		}
+
+		return Target.Team.None;
 	}
 
 	void ResetCommand ()
@@ -238,23 +250,25 @@ public class IREController : MonoBehaviour
 
 	byte[] CommandConstructor ()
 	{
-		string comm = string.Format ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
+		string comm = string.Format ("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15}",
 			              "6",
 			              controllerID,
 			              "0",
-			              targets [(int)TargetIndex.SnapTarget_1].GetCommand.ToString (),
-			              targets [(int)TargetIndex.SnapTarget_2].GetCommand.ToString (),
-			              targets [(int)TargetIndex.RoboticArm_1].GetCommand.ToString (),
-			              targets [(int)TargetIndex.RoboticArm_2].GetCommand.ToString (),
+			              FindTargetByCommandIndex (3).GetCommand.ToString (),
+			              FindTargetByCommandIndex (4).GetCommand.ToString (),
+			              FindTargetByCommandIndex (5).GetCommand.ToString (),
+			              FindTargetByCommandIndex (6).GetCommand.ToString (),
 			              "0",
 			              "0",
-			              targets [(int)TargetIndex.SnapTarget_3].GetCommand.ToString (),
-			              targets [(int)TargetIndex.SnapTarget_4].GetCommand.ToString (),
-			              targets [(int)TargetIndex.SnapTarget_5].GetCommand.ToString (),
-			              targets [(int)TargetIndex.SnapTarget_6].GetCommand.ToString (),
-			              targets [(int)TargetIndex.SnapTarget_7].GetCommand.ToString (),
-			              targets [(int)TargetIndex.SnapTarget_8].GetCommand.ToString ());
+			              FindTargetByCommandIndex (9).GetCommand.ToString (),
+			              FindTargetByCommandIndex (10).GetCommand.ToString (),
+			              FindTargetByCommandIndex (11).GetCommand.ToString (),
+			              FindTargetByCommandIndex (12).GetCommand.ToString (),
+			              FindTargetByCommandIndex (13).GetCommand.ToString (),
+			              FindTargetByCommandIndex (14).GetCommand.ToString (),
+			              ((int)GameManager.GameModeManager.CurrentGameMode).ToString ());
 
+		print (comm);
 		byte[] commandBytes = System.Text.Encoding.UTF8.GetBytes (comm);
 		return commandBytes;
 	}
@@ -287,6 +301,17 @@ public class IREController : MonoBehaviour
 		projectiles.Clear ();
 	}
 
+	public Target FindTargetByCommandIndex (int commandIndex)
+	{
+		foreach (Target target in targets) {
+			if (target.CommandIndex == commandIndex) {
+				return target;
+			}
+		}
+
+		return null;
+	}
+
 	void OnApplicationQuit ()
 	{
 		if (port != null) {
@@ -295,12 +320,6 @@ public class IREController : MonoBehaviour
 				SendCommand ();
 
 				port.Close ();
-			}
-		}
-
-		if (thread != null) {
-			if (thread.IsAlive) {
-				thread.Abort ();
 			}
 		}
 	}
@@ -319,6 +338,62 @@ public class IREController : MonoBehaviour
 			}
 
 			return temp;
+		}
+	}
+
+	public List<Target> SpawnedBlueTargets {
+		get {
+			List<Target> temp = new List<Target> ();
+			foreach (Target target in targets) {
+				if (target.IsConnected && target.IsAlive && target.CurrentTeam == Target.Team.Blue) {
+					temp.Add (target);
+				}
+			}
+
+			return temp;
+		}
+	}
+
+	public List<Target> SpawnedRedTargets {
+		get {
+			List<Target> temp = new List<Target> ();
+			foreach (Target target in targets) {
+				if (target.IsConnected && target.IsAlive && target.CurrentTeam == Target.Team.Red) {
+					temp.Add (target);
+				}
+			}
+
+			return temp;
+		}
+	}
+
+	public List<Target> AttackingTargets {
+		get {
+			List<Target> temp = new List<Target> ();
+			foreach (Target target in targets) {
+				if (target.IsAlive) {
+					temp.Add (target);
+				}
+			}
+
+			return temp;
+		}
+	}
+
+	public int GetTypeToSpawn {
+		get {
+			float midThreshold = Mathf.Lerp (0.35f, 0.1f, GameManager.GameModeManager.GetDiversityRate);
+
+			print (midThreshold);
+
+			float value = Random.value;
+			if (value <= 0.5f - midThreshold) {
+				return 1;
+			} else if (value >= 0.5f + midThreshold) {
+				return 3;
+			} else {
+				return 4;
+			}
 		}
 	}
 }

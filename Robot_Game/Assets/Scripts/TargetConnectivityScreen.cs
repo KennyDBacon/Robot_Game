@@ -7,8 +7,6 @@ public class TargetConnectivityScreen : MonoBehaviour
 {
 	List<Indicator> indicators;
 
-	bool isUpdating;
-
 	void Awake ()
 	{
 		indicators = new List<Indicator> ();
@@ -20,42 +18,18 @@ public class TargetConnectivityScreen : MonoBehaviour
 		}
 	}
 
-	void Update ()
+	public void UpdateUI (Target target)
 	{
-		if (!isUpdating) {
-			StartCoroutine (UpdateIndicator ());
+		int index = (int)target.PositionIndex;
+
+		indicators [index].ToggleStar (target.IsStarSpawned);
+
+		if (target.IsAlive) {
+			indicators [index].ShowIndicator (Color.green);
+		} else if (target.IsConnected) {
+			indicators [index].ShowIndicator (Color.yellow);
+		} else {
+			indicators [index].ShowIndicator (Color.red);
 		}
-	}
-
-	IEnumerator UpdateIndicator ()
-	{
-		isUpdating = true;
-
-		int index = 0;
-		foreach (Target target in GameManager.IREController.Targets) {
-			if (target.IsUpdateIndicator) {
-				target.IsUpdateIndicator = false;
-
-				if (target.IsAlive) {
-					indicators [index].ShowIndicator (Color.green);
-				} else if (target.IsConnected) {
-					indicators [index].ShowIndicator (Color.yellow);
-				} else {
-					indicators [index].ShowIndicator (Color.red);
-				}
-			}
-
-			index++;
-		}
-
-		yield return new WaitForSeconds (0.1f);
-
-		isUpdating = false;
-	}
-
-	public void SpawnIndication (Target target)
-	{
-		int index = GameManager.IREController.Targets.IndexOf (target);
-		indicators [index].ArrowBlink ();
 	}
 }

@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
 	public static IREController IREController;
 	public static GameModeManager GameModeManager;
 	public static UIManager UIManager;
+	public static AudioManager AudioManager;
 
 	public static Transform Center;
 	public static Player Player;
@@ -16,6 +17,7 @@ public class GameManager : MonoBehaviour
 		IREController = GetComponentInChildren<IREController> ();
 		GameModeManager = GetComponentInChildren<GameModeManager> ();
 		UIManager = GameObject.Find ("Canvas").GetComponent<UIManager> ();
+		AudioManager = GetComponentInChildren<AudioManager> ();
 
 		Center = GameObject.Find ("PlayerCenter").transform;
 		Player = Center.GetComponent<Player> ();

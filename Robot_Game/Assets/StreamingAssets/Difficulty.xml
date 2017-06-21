@@ -1,0 +1,18 @@
+<DifficultySettings>
+	<Settings>
+		<Difficulty ID = "Easy">
+			<SpawnIntensity>1.0</SpawnIntensity>
+			<MinSpawnInterval>2.0</MinSpawnInterval>
+			<MaxSpawnInterval>3.5</MaxSpawnInterval>
+			<ST_AttackInterval>3.0</ST_AttackInterval>
+			<RA_AttackInterval>1.0</RA_AttackInterval>
+		</Difficulty>
+		<Difficulty ID = "Advanced">
+			<SpawnIntensity>0.8</SpawnIntensity>
+			<MinSpawnInterval>0.8</MinSpawnInterval>
+			<MaxSpawnInterval>2.0</MaxSpawnInterval>
+			<ST_AttackInterval>2.0</ST_AttackInterval>
+			<RA_AttackInterval>1.0</RA_AttackInterval>
+		</Difficulty>
+	</Settings>
+</DifficultySettings>

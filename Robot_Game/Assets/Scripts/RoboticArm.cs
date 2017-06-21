@@ -15,6 +15,8 @@ public class RoboticArm : Target
 	{
 		if (IsPerformAttack) {
 			GameObject laser = Instantiate (LaserModel, this.transform.localPosition, Quaternion.identity);
+			laser.GetComponent<LineRenderer> ().SetPosition (0, this.transform.localPosition);
+			laser.GetComponent<LineRenderer> ().SetPosition (1, this.transform.localPosition);
 		}
 
 		base.Attack ();

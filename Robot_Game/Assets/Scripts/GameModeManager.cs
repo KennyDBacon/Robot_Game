@@ -8,43 +8,43 @@ public class GameModeManager : MonoBehaviour
 	bool isGameRunning;
 
 	Mode currentGameMode;
-
-	int maxEnemyCount = 100;
-	int enemyCount;
-
+	/*
 	float maxTime = 60.0f * 2.0f;
 	float timeRemaining;
+*/
+	DifficultySetting currentDifficulty;
+	float spawnInterval, minSpawnInterval, maxSpawnInterval;
+
+	int blueIndividualScore, redIndividualScore;
+	int blueTeamScore, redTeamScore;
 
 	public enum Mode
 	{
-		Assault,
-		TimeAttack
+		PvP = 0,
+		PvE = 1
+	}
+
+	void Start ()
+	{
+		currentDifficulty = DataManager.DifficultySettings [0];
+
+		blueTeamScore = 0;
+		redTeamScore = 0;
 	}
 
 	void Update ()
 	{
 		if (IsGameRunning) {
-			switch (currentGameMode) {
-			case Mode.Assault:
-				TargetPracticeHandler ();
-				break;
-			case Mode.TimeAttack:
-				TimeAttackHandler ();
-				break;
+			//TimeHandler ();
+			if (timeLeft > 0) {
+				if (!timeTicking) {
+					StartCoroutine (NewTimeHandler ());
+				}
 			}
 		}
 	}
-
-	void TargetPracticeHandler ()
-	{
-		GameManager.UIManager.UpdateObjectiveSubText (enemyCount.ToString ());
-
-		if (enemyCount <= 0) {
-			EndGame ();
-		}
-	}
-
-	void TimeAttackHandler ()
+	/*
+	void TimeHandler ()
 	{
 		if (timeRemaining > 0.0f) {
 			timeRemaining -= Time.deltaTime;
@@ -59,19 +59,55 @@ public class GameModeManager : MonoBehaviour
 				timeString = minute.ToString () + ":" + second.ToString ();
 			}
 
-			GameManager.UIManager.UpdateObjectiveSubText (timeString);
+			GameManager.UIManager.UpdateTimer (timeString);
 		} else {
-			EndGame ();
+			if (currentGameMode == Mode.PvP) {
+				EndRound (GameEndScreen.Title.Buffer_RoundEnd);
+			} else {
+				EndRound (GameEndScreen.Title.PVE_Win_Survived);
+			}
 		}
 	}
+*/
+	int totalTime;
+	int timeLeft;
+	bool timeTicking;
 
-	public void KillTarget ()
+	IEnumerator NewTimeHandler ()
 	{
-		GameManager.Player.UpdateScore (10);
+		timeTicking = true;
+		yield return new WaitForSeconds (1.0f);
 
-		if (enemyCount > 0) {
-			enemyCount--;
+		timeLeft--;
+
+		GameManager.UIManager.UpdateTimer (GetTimeString);
+
+		if (timeLeft <= 0) {
+			if (currentGameMode == Mode.PvP) {
+				EndRound (GameEndScreen.Title.Buffer_RoundEnd);
+			} else {
+				EndRound (GameEndScreen.Title.PVE_Win_Survived);
+			}
 		}
+
+		timeTicking = false;
+	}
+
+	public void AddScore (Target.Team team, int value)
+	{
+		switch (team) {
+		case Target.Team.Blue:
+			blueIndividualScore += value;
+			break;
+		case Target.Team.Red:
+			redIndividualScore += value;
+			break;
+		case Target.Team.None:
+			GameManager.Player.UpdateScore (value);
+			break;
+		}
+
+		GameManager.UIManager.UpdateScore ();
 	}
 
 	public void SetGameMode (Mode mode)
@@ -79,51 +115,108 @@ public class GameModeManager : MonoBehaviour
 		isGameRunning = true;
 		currentGameMode = mode;
 
+		GameManager.UIManager.EnableUI ();
+
 		switch (mode) {
-		case Mode.Assault:
-			GameManager.UIManager.SetObjectiveText ("Enemies Left");
-			enemyCount = maxEnemyCount;
-			GameManager.Player.Reset ();
+		case Mode.PvP:
+			//timeRemaining = 60.0f * 1.0f;
+			totalTime = 60 * 1;
+			timeLeft = totalTime;
+
+			blueIndividualScore = 0;
+			redIndividualScore = 0;
+			blueTeamScore = 0;
+			redTeamScore = 0;
 			break;
-		case Mode.TimeAttack:
-			GameManager.UIManager.SetObjectiveText ("Time Remaining");
-			timeRemaining = maxTime;
+		case Mode.PvE:
+			//timeRemaining = 60.0f * 10.0f;
+			totalTime = 60 * 10;
+			timeLeft = totalTime;
+
 			GameManager.Player.Reset ();
 			break;
 		}
+
+		GameManager.UIManager.UpdateTimer (GetTimeString);
+		GameManager.UIManager.UpdateScore ();
+
+		minSpawnInterval = currentDifficulty.MinSpawnInterval;
+		maxSpawnInterval = currentDifficulty.MaxSpawnInterval;
+
+		spawnInterval = GetNewSpawnInterval;
 
 		GameManager.IREController.Clear ();
-		GameManager.UIManager.UpdateCenterText (GameManager.Player.Health.ToString ());
+
+		GameManager.AudioManager.PlayMusic ();
 	}
 
-	public int SpawnCount {
+	public void RestartGameMode ()
+	{
+		isGameRunning = true;
+
+		switch (currentGameMode) {
+		case Mode.PvP:
+			//timeRemaining = 60.0f * 1.0f;
+			totalTime = 60 * 1;
+			timeLeft = totalTime;
+
+			blueIndividualScore = 0;
+			redIndividualScore = 0;
+			break;
+		case Mode.PvE:
+			//timeRemaining = 60.0f * 10.0f;
+			totalTime = 60 * 10;
+			timeLeft = totalTime;
+
+			GameManager.Player.Reset ();
+			break;
+		}
+
+		GameManager.UIManager.UpdateTimer (GetTimeString);
+		GameManager.UIManager.UpdateScore ();
+
+		spawnInterval = GetNewSpawnInterval;
+
+		GameManager.IREController.Clear ();
+
+		GameManager.AudioManager.PlayMusic ();
+	}
+
+	public void SetDifficulty (int index)
+	{
+		currentDifficulty = DataManager.DifficultySettings [index];
+	}
+
+	public void EndRound (GameEndScreen.Title title)
+	{
+		if (currentGameMode == Mode.PvP) {
+			blueTeamScore += blueIndividualScore;
+			redTeamScore += redIndividualScore;
+		}
+
+		GameManager.AudioManager.StopMusic ();
+
+		GameManager.UIManager.GameEndScreen.EnableScreen (title);
+		isGameRunning = false;
+	}
+
+	public float GetNewSpawnInterval {
 		get {
-			int baseSpawnCount = 3;// GameManager.IREController.Targets.Count;
+			float value = 1.0f;
+			float rate = currentDifficulty.SpawnIntensity;
 
-			int count = 0;
-			switch (currentGameMode) {
-			case Mode.Assault:
-				count = baseSpawnCount - (int)((float)baseSpawnCount * ((float)enemyCount / (float)maxEnemyCount));
-				count = Mathf.CeilToInt (count);
-				break;
-			case Mode.TimeAttack:
-				count = (int)((float)baseSpawnCount * (maxTime - timeRemaining) / maxTime);
-				count = Mathf.CeilToInt (count);
-				break;
-			}
+			value = ((float)timeLeft / (float)totalTime) / rate;
+			value = Mathf.Max (value, 0.0f);
 
-			if (count <= 0) {
-				count = 1;
-			}
-
-			return count;
+			return Mathf.Lerp (minSpawnInterval, maxSpawnInterval, value);
 		}
 	}
 
-	public void EndGame ()
-	{
-		GameManager.UIManager.MenuScreen.EnableScreen ("Game Over");
-		isGameRunning = false;
+	public float GetDiversityRate {
+		get {
+			float rate = currentDifficulty.SpawnIntensity;
+			return ((float)timeLeft / (float)totalTime) / rate;
+		}
 	}
 
 	public bool IsAllowMenuToggle {
@@ -137,12 +230,62 @@ public class GameModeManager : MonoBehaviour
 	}
 
 	public bool IsGameRunning {
+		get { return isGameRunning && !GameManager.UIManager.IsPaused; }
+	}
+
+	public int PVPResult {
 		get {
-			if (isGameRunning && !GameManager.UIManager.IsPaused) {
-				return true;
+			if (redTeamScore > blueTeamScore) {
+				return -1;
+			} else if (blueTeamScore > redTeamScore) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+	}
+
+	public string GetTimeString {
+		get {
+			int minute = timeLeft / 60;
+			int second = timeLeft % 60;
+
+			string timeString = "";
+			if (second < 10) {
+				timeString = minute.ToString () + ":0" + second.ToString ();
+			} else {
+				timeString = minute.ToString () + ":" + second.ToString ();
 			}
 
-			return false;
+			return timeString;
 		}
+	}
+
+	public Mode CurrentGameMode {
+		get { return currentGameMode; }
+	}
+
+	public DifficultySetting CurrentDifficulty {
+		get { return currentDifficulty; }
+	}
+
+	public float SpawnInterval {
+		get { return spawnInterval; }
+	}
+
+	public int BlueIndividualScore {
+		get { return blueIndividualScore; }
+	}
+
+	public int RedIndividualScore {
+		get { return redIndividualScore; }
+	}
+
+	public int BlueTeamScore {
+		get { return blueTeamScore; }
+	}
+
+	public int RedTeamScore {
+		get { return redTeamScore; }
 	}
 }

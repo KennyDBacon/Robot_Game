@@ -1,34 +1,84 @@
 <TargetStatCollection>
 	<Targets>
-		<Target id = "ST1">
+		<Target ID = "0">
+			<Label>Snap_Target_1</Label>
+			<Type>SnapTarget</Type>
 			<IsActive>true</IsActive>
+			<StatusIndex>4</StatusIndex>
+			<CommandIndex>3</CommandIndex>
+			<PositionIndex>7</PositionIndex>
 		</Target>
-		<Target id = "ST2">
+		<Target ID = "1">
+			<Label>Snap_Target_2</Label>
+			<Type>SnapTarget</Type>
 			<IsActive>true</IsActive>
+			<StatusIndex>5</StatusIndex>
+			<CommandIndex>4</CommandIndex>
+			<PositionIndex>0</PositionIndex>
 		</Target>
-		<Target id = "ST3">
-			<IsActive>false</IsActive>
-		</Target>
-		<Target id = "ST4">
-			<IsActive>false</IsActive>
-		</Target>
-		<Target id = "ST5">
-			<IsActive>false</IsActive>
-		</Target>
-		<Target id = "ST6">
-			<IsActive>false</IsActive>
-		</Target>
-		<Target id = "ST7">
-			<IsActive>false</IsActive>
-		</Target>
-		<Target id = "ST8">
-			<IsActive>false</IsActive>
-		</Target>
-		<Target id = "RA1">
+		<Target ID = "2">
+			<Label>Snap_Target_3</Label>
+			<Type>SnapTarget</Type>
 			<IsActive>true</IsActive>
+			<StatusIndex>11</StatusIndex>
+			<CommandIndex>9</CommandIndex>
+			<PositionIndex>2</PositionIndex>
 		</Target>
-		<Target id = "RA2">
+		<Target ID = "3">
+			<Label>Snap_Target_4</Label>
+			<Type>SnapTarget</Type>
+			<IsActive>true</IsActive>
+			<StatusIndex>12</StatusIndex>
+			<CommandIndex>10</CommandIndex>
+			<PositionIndex>4</PositionIndex>
+		</Target>
+		<Target ID = "4">
+			<Label>Snap_Target_5</Label>
+			<Type>SnapTarget</Type>
+			<IsActive>true</IsActive>
+			<StatusIndex>13</StatusIndex>
+			<CommandIndex>11</CommandIndex>
+			<PositionIndex>1</PositionIndex>
+		</Target>
+		<Target ID = "5">
+			<Label>Snap_Target_6</Label>
+			<Type>SnapTarget</Type>
+			<IsActive>true</IsActive>
+			<StatusIndex>14</StatusIndex>
+			<CommandIndex>12</CommandIndex>
+			<PositionIndex>3</PositionIndex>
+		</Target>
+		<Target ID = "6">
+			<Label>Snap_Target_7</Label>
+			<Type>SnapTarget</Type>
+			<IsActive>true</IsActive>
+			<StatusIndex>15</StatusIndex>
+			<CommandIndex>13</CommandIndex>
+			<PositionIndex>5</PositionIndex>
+		</Target>
+		<Target ID = "7">
+			<Label>Snap_Target_8</Label>
+			<Type>SnapTarget</Type>
+			<IsActive>true</IsActive>
+			<StatusIndex>16</StatusIndex>
+			<CommandIndex>14</CommandIndex>
+			<PositionIndex>9</PositionIndex>
+		</Target>
+		<Target ID = "8">
+			<Label>Robotic_Arm_1</Label>
+			<Type>RoboticArm</Type>
+			<IsActive>true</IsActive>
+			<StatusIndex>6</StatusIndex>
+			<CommandIndex>5</CommandIndex>
+			<PositionIndex>6</PositionIndex>
+		</Target>
+		<Target ID = "9">
+			<Label>Robotic_Arm_2</Label>
+			<Type>RoboticArm</Type>
 			<IsActive>false</IsActive>
+			<StatusIndex>7</StatusIndex>
+			<CommandIndex>6</CommandIndex>
+			<PositionIndex>8</PositionIndex>
 		</Target>
 	</Targets>
 </TargetStatCollection>

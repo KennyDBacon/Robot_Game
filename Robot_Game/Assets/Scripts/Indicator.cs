@@ -6,7 +6,7 @@ using DG.Tweening;
 
 public class Indicator : MonoBehaviour
 {
-	Image box, arrow;
+	Image box, arrow, star;
 
 	Sequence blinkSequence;
 
@@ -15,9 +15,19 @@ public class Indicator : MonoBehaviour
 		box = this.transform.Find ("Box").GetComponent<Image> ();
 		arrow = this.transform.Find ("Arrow").GetComponent<Image> ();
 
+		if (this.transform.Find ("Star") != null) {
+			star = this.transform.Find ("Star").GetComponent<Image> ();
+			star.gameObject.SetActive (false);
+		}
+
 		box.color = Color.red;
 		box.canvasRenderer.SetAlpha (0.0f);
 		arrow.canvasRenderer.SetAlpha (0.0f);
+	}
+
+	void Update ()
+	{
+
 	}
 
 	public void ShowIndicator (Color color)
@@ -40,5 +50,12 @@ public class Indicator : MonoBehaviour
 		blinkSequence.AppendCallback (() => arrow.canvasRenderer.SetAlpha (0.0f));
 
 		blinkSequence.Play ();
+	}
+
+	public void ToggleStar (bool isActive)
+	{
+		if (star != null) {
+			star.gameObject.SetActive (isActive);
+		}
 	}
 }

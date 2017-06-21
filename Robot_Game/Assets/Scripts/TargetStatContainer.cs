@@ -1,12 +1,13 @@
 ﻿using System.Xml;
 using System.Xml.Serialization;
 using System.IO;
+using System.Collections.Generic;
 
 [XmlRoot ("TargetStatCollection")]
 public class TargetStatContainer
 {
 	[XmlArray ("Targets"),XmlArrayItem ("Target")]
-	public TargetStats[] TargetStats;
+	public List<TargetStat> TargetStats;
 
 	public static TargetStatContainer Load (string path)
 	{

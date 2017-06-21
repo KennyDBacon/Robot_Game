@@ -5,11 +5,12 @@ using UnityEngine.UI;
 
 public class Target : MonoBehaviour
 {
-	public bool IsUpdateIndicator;
-
 	/*
 	 * Command
-	 * Activate: 1
+	 * Activate - White Light: 4
+	 * Activate - Blue Light: 3
+	 * Activate - Green Light: 2
+	 * Activate - Red Light: 1
 	 * Deactivate: 0
 	 */
 	int command;
@@ -24,37 +25,37 @@ public class Target : MonoBehaviour
 	int currStatus;
 	int prevStatus;
 
-	string label;
-	IREController.TargetIndex index;
-	Category type;
-	bool isActive;
+	Team team;
+
+	int id;
 
 	Vector3 screenPosition;
 
-	bool isOffsetTimer;
 	protected float attackInterval;
 	protected float attackTimer;
-	protected float attackTimerOffset;
 
 	float respawnInterval;
 	float respawnTimer;
 
-	public enum Category
+	bool isStarSpawned;
+	bool isStarSpawnable;
+	float starSpawnInterval = 1.0f;
+	float starSpawnTimer;
+
+	public enum Team
 	{
-		SnapTarget,
-		RoboticArm
+		None,
+		Blue,
+		Red
 	}
 
-	public void Setup (IREController.TargetIndex targetIndex, string lbl, Category t, bool isAct, Vector3 pos, float interval, bool isTimeOffset)
+	public void Setup (int v_id, Vector3 pos, float interval)
 	{
-		index = targetIndex;
-		label = lbl;
-		type = t;
-		isActive = isAct;
+		team = Team.None;
+
+		id = v_id;
 
 		screenPosition = pos;
-
-		isOffsetTimer = isTimeOffset;
 		attackInterval = interval;
 
 		Reset ();
@@ -62,22 +63,38 @@ public class Target : MonoBehaviour
 
 	void Update ()
 	{
-		if (IsAlive && isActive) {
-			Attack ();
+		if (GameManager.GameModeManager.IsGameRunning) {
+			//StarSpawnHandler ();
+
+			if (IsAlive && IsActive) {
+				Attack ();
+			}
+		}
+	}
+
+	public void UpdateStatus (int stat)
+	{
+		if (!currStatus.Equals (stat)) {
+			prevStatus = currStatus;
+			currStatus = stat;
+
+			if (prevStatus > 0 && currStatus <= 0) {
+				command = 9;
+
+				GameManager.GameModeManager.AddScore (team, 10);
+
+				isStarSpawned = false;
+			}
+
+			GameManager.UIManager.TargetConnectivityScreen.UpdateUI (this);
 		}
 	}
 
 	protected virtual void Attack ()
 	{
-		if (GameManager.GameModeManager.IsGameRunning) {
+		if (IsAttackAllowed) {
 			if (IsPerformAttack) {
 				attackTimer = 0.0f;
-
-				if (isOffsetTimer) {
-					attackTimerOffset = Random.Range (-0.1f, 0.1f);
-				} else {
-					attackTimerOffset = 0.0f;
-				}
 				return;
 			}
 
@@ -85,37 +102,53 @@ public class Target : MonoBehaviour
 		}
 	}
 
-
-	bool isReset;
-
-	public bool UpdateStatus (int stat)
+	protected virtual void StarSpawnHandler ()
 	{
-		if (!currStatus.Equals (stat)) {
-			IsUpdateIndicator = true;
-			prevStatus = currStatus;
-			currStatus = stat;
+		if (!isStarSpawned && Label.Equals ("Snap_Target_3")) {
+			starSpawnTimer += Time.deltaTime;
 
-			if (prevStatus > 0 && currStatus <= 0) {
-				command = 9;
-
-				GameManager.GameModeManager.KillTarget ();
+			if (starSpawnTimer >= starSpawnInterval) {
+				starSpawnTimer = 0.0f;
+				isStarSpawnable = true;
 			}
-
-			return true;
 		}
+	}
 
-		return false;
+	public void SpawnSequence (Team t, int comm)
+	{
+		Reset ();
+		//StarSpawnCheck ();
+
+		command = comm;
+		team = t;
+	}
+
+	public void StarSpawnCheck ()
+	{
+		if (GameManager.GameModeManager.CurrentGameMode != GameModeManager.Mode.PvP) {
+			if (isStarSpawnable) {
+				float rand = Random.value;
+
+				if (rand <= 0.15f) {
+					isStarSpawned = true;
+					isStarSpawnable = false;
+
+					GameManager.UIManager.TargetConnectivityScreen.UpdateUI (this);
+				}
+			}
+		}
 	}
 
 	public void Reset ()
 	{
+		team = Team.None;
+
 		prevStatus = -1;
 		currStatus = -1;
 
 		command = 9;
 
 		attackTimer = 0.0f;
-		attackTimerOffset = Random.Range (-0.1f, 0.1f);
 	}
 
 	public string GetConnectivity {
@@ -129,17 +162,32 @@ public class Target : MonoBehaviour
 	}
 
 	public string Label {
-		get { return label; }
+		get { return DataManager.TargetStats [id].Label; }
 	}
 
-	public IREController.TargetIndex TargetIndex {
-		get { return index; }
+	bool IsActive {
+		get { return DataManager.TargetStats [id].IsActive; }
+	}
+
+	public int StatusIndex {
+		get { return DataManager.TargetStats [id].StatusIndex; }
+	}
+
+	public int CommandIndex {
+		get { return DataManager.TargetStats [id].CommandIndex; }
+	}
+
+	public int PositionIndex {
+		get { return DataManager.TargetStats [id].PositionIndex; }
 	}
 
 	public int GetCommand {
 		get {
 			int comm = command;
+
+			// Reset command once used
 			command = 9;
+
 			return comm;
 		}
 	}
@@ -150,7 +198,7 @@ public class Target : MonoBehaviour
 
 	public bool IsConnected {
 		get {
-			if (currStatus >= 0 && isActive) {
+			if (currStatus >= 0 && IsActive) {
 				return true;
 			}
 
@@ -160,7 +208,17 @@ public class Target : MonoBehaviour
 
 	public bool IsAlive {
 		get {
-			if (currStatus >= 1 && isActive) {
+			if (currStatus >= 1 && IsActive) {
+				return true;
+			}
+
+			return false;
+		}
+	}
+
+	bool IsAttackAllowed {
+		get {
+			if (GameManager.GameModeManager.CurrentGameMode != GameModeManager.Mode.PvP) {
 				return true;
 			}
 
@@ -170,11 +228,19 @@ public class Target : MonoBehaviour
 
 	protected bool IsPerformAttack {
 		get {
-			if (attackTimer >= attackInterval + attackTimerOffset) {
+			if (attackTimer >= attackInterval) {
 				return true;
 			}
 
 			return false;
 		}
+	}
+
+	public bool IsStarSpawned {
+		get { return isStarSpawned; }
+	}
+
+	public Team CurrentTeam {
+		get { return team; }
 	}
 }

@@ -1,20 +1,16 @@
 ﻿<Properties StartupItem="Assembly-CSharp.csproj" RefactoringSettings.EnableRefactorings="True">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\RoboticArm.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\AudioManager.cs">
     <Files>
-      <File FileName="Assets\Scripts\IREController.cs" Line="205" Column="12" />
-      <File FileName="Assets\Scripts\GameManager.cs" Line="25" Column="3" />
-      <File FileName="Assets\Scripts\GameModeManager.cs" Line="66" Column="3" />
-      <File FileName="Assets\Player.cs" Line="42" Column="43" />
-      <File FileName="Assets\Scripts\UIManager.cs" Line="66" Column="20" />
-      <File FileName="Assets\Scripts\Target.cs" Line="101" Column="36" />
-      <File FileName="Assets\Scripts\SnapTarget.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\RoboticArm.cs" Line="17" Column="99" />
-      <File FileName="Assets\Scripts\Laser.cs" Line="42" Column="89" />
-      <File FileName="Assets\Scripts\Projectile.cs" Line="24" Column="36" />
-      <File FileName="Assets\Scripts\TargetStatContainer.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\TargetStats.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\TargetConnectivityScreen.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\IREController.cs" Line="388" Column="4" />
+      <File FileName="Assets\StreamingAssets\EnemyStats.xml" Line="62" Column="18" />
+      <File FileName="Assets\Scripts\Target.cs" Line="139" Column="4" />
+      <File FileName="Assets\Scripts\GameModeManager.cs" Line="195" Column="4" />
+      <File FileName="Assets\Scripts\GameManager.cs" Line="24" Column="3" />
+      <File FileName="Assets\Scripts\MenuScreen.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\UIManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\AudioManager.cs" Line="34" Column="30" />
+      <File FileName="Assets\Scripts\Player.cs" Line="36" Column="11" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
